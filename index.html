@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f2444">
+
+<!-- PWA / iOS -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Fluid Calc">
+<meta name="mobile-web-app-capable" content="yes">
+
+<link rel="manifest" href="manifest.json">
+<title>Pediatric Fluid Calculator</title>
+
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+  background: #eef3fa;
+  color: #1a2b4a;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Header (extends behind status bar) ── */
+.header {
+  background: linear-gradient(135deg, #0f2444 0%, #1e4d9b 100%);
+  color: white;
+  padding: 16px 20px 22px;
+  padding-top: calc(16px + env(safe-area-inset-top));
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(15,36,68,0.3);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header-badge {
+  display: inline-block;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 50px;
+  padding: 3px 12px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  color: rgba(255,255,255,0.85);
+}
+.header h1 {
+  font-size: 1.55rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin-bottom: 2px;
+}
+.header p {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.6);
+}
+
+/* ── Container ── */
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px 14px;
+  padding-bottom: calc(36px + env(safe-area-inset-bottom));
+}
+
+/* ── Tabs ── */
+.tabs {
+  display: flex;
+  background: white;
+  border-radius: 50px;
+  padding: 5px;
+  box-shadow: 0 2px 12px rgba(30,60,114,0.1);
+  margin-bottom: 18px;
+  border: 1px solid #dce8f8;
+}
+.tab-btn {
+  flex: 1;
+  padding: 12px 16px;
+  min-height: 48px;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 700;
+  transition: all 0.25s ease;
+  background: transparent;
+  color: #7a9cc8;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.tab-btn.active {
+  background: linear-gradient(135deg, #0f2444 0%, #1e4d9b 100%);
+  color: white;
+  box-shadow: 0 4px 14px rgba(30,77,155,0.35);
+}
+
+/* ── Warning Banner ── */
+.warning-banner {
+  display: none;
+  border-radius: 14px;
+  padding: 13px 16px;
+  margin-bottom: 16px;
+  font-weight: 700;
+  font-size: 0.875rem;
+  align-items: flex-start;
+  gap: 10px;
+  line-height: 1.45;
+}
+.warning-banner.show { display: flex; }
+.warning-banner.warn { background: #fffbeb; border: 2px solid #f59e0b; color: #92400e; }
+.warning-banner.error { background: #fef2f2; border: 2px solid #ef4444; color: #991b1b; }
+.warning-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+
+/* ── Input Card ── */
+.input-card {
+  background: white;
+  border-radius: 18px;
+  padding: 18px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 10px rgba(30,60,114,0.07);
+  border: 1px solid #dce8f8;
+}
+.card-label {
+  font-size: 0.67rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: #2d5fc4;
+  font-weight: 800;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card-label::after { content: ''; flex: 1; height: 1px; background: #e8f0fd; }
+.input-group { margin-bottom: 14px; }
+.input-group:last-child { margin-bottom: 0; }
+.input-group > label {
+  display: block;
+  font-size: 0.83rem;
+  font-weight: 700;
+  color: #2d4a7a;
+  margin-bottom: 7px;
+}
+.opt-tag { font-weight: 500; color: #9ab0d0; font-size: 0.75rem; margin-left: 4px; }
+.input-row { display: flex; gap: 10px; }
+
+.input-field {
+  width: 100%;
+  padding: 13px 14px;
+  min-height: 48px;
+  border: 2px solid #e0eaf8;
+  border-radius: 13px;
+  font-size: 1rem;
+  color: #1a2b4a;
+  background: #f6faff;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  outline: none;
+  font-weight: 500;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.input-field:focus {
+  border-color: #2d5fc4;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(45,95,196,0.12);
+}
+select.input-field { cursor: pointer; min-width: 115px; }
+
+/* ── Radio Pills ── */
+.radio-group { display: flex; flex-wrap: wrap; gap: 8px; }
+.radio-pill { position: relative; }
+.radio-pill input { position: absolute; opacity: 0; width: 0; height: 0; }
+.radio-pill label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 2px solid #e0eaf8;
+  border-radius: 50px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #6a90c0;
+  transition: all 0.2s;
+  background: #f6faff;
+  white-space: nowrap;
+  margin: 0;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.radio-pill input:checked + label {
+  background: #1e4d9b;
+  border-color: #1e4d9b;
+  color: white;
+  box-shadow: 0 3px 10px rgba(30,77,155,0.3);
+}
+
+/* ── Results Card ── */
+.results-card {
+  background: linear-gradient(145deg, #0a1e3d 0%, #102c5c 60%, #15366b 100%);
+  border-radius: 22px;
+  padding: 24px 20px;
+  margin-top: 4px;
+  box-shadow: 0 10px 32px rgba(10,30,61,0.4), 0 1px 0 rgba(255,255,255,0.06) inset;
+  position: relative;
+  overflow: hidden;
+}
+.results-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 0 18px;
+  text-align: center;
+}
+.empty-icon { font-size: 2rem; margin-bottom: 10px; opacity: 0.55; }
+.empty-text { color: rgba(255,255,255,0.35); font-size: 0.875rem; line-height: 1.5; }
+
+.results-content { display: none; }
+.results-content.show { display: block; }
+
+.results-label {
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: rgba(255,255,255,0.42);
+  font-weight: 700;
+  margin-bottom: 20px;
+  display: block;
+}
+
+/* ── Metric Grid ── */
+.metric-grid {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 18px;
+}
+.metric-grid.cols-3 { grid-template-columns: 1fr 1px 1fr 1px 1fr; }
+.metric-grid.cols-2 { grid-template-columns: 1fr 1px 1fr; }
+.metric-divider { background: rgba(255,255,255,0.1); align-self: stretch; margin: 8px 0; }
+.metric-item { text-align: center; padding: 4px 6px; }
+.metric-value {
+  font-size: 2.3rem;
+  font-weight: 900;
+  color: white;
+  line-height: 1;
+  letter-spacing: -1.5px;
+}
+.metric-value.sm { font-size: 1.75rem; }
+.metric-unit { font-size: 0.8rem; color: rgba(255,255,255,0.52); font-weight: 600; margin-left: 2px; }
+.metric-desc {
+  font-size: 0.66rem;
+  color: rgba(255,255,255,0.38);
+  margin-top: 5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+/* ── Breakdown ── */
+.section-divider { height: 1px; background: rgba(255,255,255,0.09); margin: 16px 0; }
+.breakdown-title {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: rgba(255,255,255,0.35);
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  font-size: 0.84rem;
+}
+.breakdown-row:last-child { border-bottom: none; }
+.breakdown-row .row-label { color: rgba(255,255,255,0.58); }
+.breakdown-row .row-val { color: rgba(255,255,255,0.85); font-weight: 700; font-variant-numeric: tabular-nums; }
+.breakdown-row.dimmed .row-label,
+.breakdown-row.dimmed .row-val { opacity: 0.3; }
+.breakdown-row.total-row { margin-top: 6px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.14); border-bottom: none; }
+.breakdown-row.total-row .row-label { color: white; font-weight: 700; font-size: 0.9rem; }
+.breakdown-row.total-row .row-val { color: #7dd3fc; font-weight: 900; font-size: 1rem; }
+
+/* ── Bag Rec ── */
+.bag-rec {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 13px;
+  padding: 13px 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  margin-bottom: 18px;
+}
+.bag-icon { font-size: 1.25rem; flex-shrink: 0; }
+.bag-main { font-size: 0.875rem; font-weight: 700; color: rgba(255,255,255,0.9); line-height: 1.4; }
+.bag-sub { font-size: 0.74rem; color: rgba(255,255,255,0.42); margin-top: 3px; line-height: 1.4; }
+
+/* ── Action Buttons ── */
+.action-buttons { display: flex; gap: 10px; }
+.btn {
+  flex: 1;
+  padding: 14px 16px;
+  min-height: 50px;
+  border: none;
+  border-radius: 50px;
+  font-size: 0.875rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.18s;
+  letter-spacing: 0.2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.btn:active { transform: scale(0.96); }
+.btn-copy {
+  background: rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.9);
+  border: 1.5px solid rgba(255,255,255,0.18);
+}
+.btn-copy:hover { background: rgba(255,255,255,0.18); }
+.btn-reset {
+  background: rgba(239,68,68,0.15);
+  color: #fca5a5;
+  border: 1.5px solid rgba(239,68,68,0.25);
+}
+.btn-reset:hover { background: rgba(239,68,68,0.22); }
+
+/* ── Footer ── */
+.footer {
+  text-align: center;
+  margin-top: 24px;
+  color: #7a9cc8;
+  font-size: 0.73rem;
+  line-height: 1.7;
+}
+.footer strong { color: #4a78bb; }
+
+/* ── Install Banner ── */
+.install-banner {
+  display: none;
+  background: linear-gradient(135deg, #1e4d9b, #2563eb);
+  border-radius: 16px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  color: white;
+  font-size: 0.84rem;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 4px 14px rgba(30,77,155,0.3);
+}
+.install-banner.show { display: flex; }
+.install-banner-text { flex: 1; font-weight: 600; line-height: 1.4; }
+.install-banner-text span { display: block; font-size: 0.75rem; opacity: 0.7; margin-top: 2px; }
+.install-btn {
+  background: white;
+  color: #1e4d9b;
+  border: none;
+  border-radius: 50px;
+  padding: 9px 16px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Responsive ── */
+@media (max-width: 380px) {
+  .metric-value { font-size: 1.9rem; }
+  .metric-value.sm { font-size: 1.5rem; }
+  .header h1 { font-size: 1.35rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-badge">Clinical Reference</div>
+  <h1>Pediatric Fluid Calc</h1>
+  <p>Holliday-Segar (4-2-1) Maintenance Dosing</p>
+</div>
+
+<div class="container">
+
+  <!-- Install nudge (shown only in browser, not when installed) -->
+  <div class="install-banner" id="installBanner">
+    <span style="font-size:1.4rem">📲</span>
+    <div class="install-banner-text">
+      Add to Home Screen
+      <span>Tap Share → "Add to Home Screen" to install as an app</span>
+    </div>
+    <button class="install-btn" onclick="dismissInstall()">Got it</button>
+  </div>
+
+  <!-- Mode Tabs -->
+  <div class="tabs" role="tablist">
+    <button class="tab-btn active" onclick="switchTab('simple')" role="tab">Simple Mode</button>
+    <button class="tab-btn" onclick="switchTab('complete')" role="tab">Complete Mode</button>
+  </div>
+
+  <!-- Warning Banner -->
+  <div class="warning-banner" id="warningBanner" role="alert">
+    <span class="warning-icon" id="warnIcon">⚠️</span>
+    <span id="warningText"></span>
+  </div>
+
+  <!-- ══════════ SIMPLE MODE ══════════ -->
+  <div id="simpleMode">
+    <div class="input-card">
+      <div class="card-label">Patient Weight</div>
+      <div class="input-group">
+        <label for="simpleWeight">Weight</label>
+        <div class="input-row">
+          <input type="number" class="input-field" id="simpleWeight"
+                 placeholder="e.g. 15" min="0" max="300" step="0.1"
+                 oninput="calcSimple()" inputmode="decimal" autocomplete="off">
+          <select class="input-field" style="min-width:70px" disabled aria-label="kg">
+            <option>kg</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="results-card">
+      <div class="empty-state" id="simpleEmpty">
+        <div class="empty-icon">🧪</div>
+        <div class="empty-text">Enter patient weight to calculate<br>maintenance fluids</div>
+      </div>
+      <div class="results-content" id="simpleContent">
+        <span class="results-label">Maintenance Fluids — 4-2-1 Rule</span>
+        <div class="metric-grid cols-3">
+          <div class="metric-item">
+            <div><span class="metric-value" id="s-rate">—</span><span class="metric-unit">mL/hr</span></div>
+            <div class="metric-desc">Maintenance</div>
+          </div>
+          <div class="metric-divider"></div>
+          <div class="metric-item">
+            <div><span class="metric-value" id="s-rate15">—</span><span class="metric-unit">mL/hr</span></div>
+            <div class="metric-desc">1.5× Rate</div>
+          </div>
+          <div class="metric-divider"></div>
+          <div class="metric-item">
+            <div><span class="metric-value sm" id="s-bag">—</span><span class="metric-unit">mL</span></div>
+            <div class="metric-desc">Bag Size</div>
+          </div>
+        </div>
+        <div class="bag-rec">
+          <span class="bag-icon">💊</span>
+          <div>
+            <div class="bag-main" id="s-bag-main">—</div>
+            <div class="bag-sub" id="s-bag-sub">—</div>
+          </div>
+        </div>
+        <div class="action-buttons">
+          <button class="btn btn-copy" onclick="copySimple(event)">📋 Copy Results</button>
+          <button class="btn btn-reset" onclick="resetSimple()">↺ Reset</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ COMPLETE MODE ══════════ -->
+  <div id="completeMode" style="display:none">
+    <div class="input-card">
+      <div class="card-label">Patient Information</div>
+      <div class="input-group">
+        <label for="cWeight">Weight</label>
+        <div class="input-row">
+          <input type="number" class="input-field" id="cWeight"
+                 placeholder="e.g. 15" min="0" max="300" step="0.1"
+                 oninput="calcComplete()" inputmode="decimal" autocomplete="off">
+          <select class="input-field" style="min-width:70px" disabled aria-label="kg">
+            <option>kg</option>
+          </select>
+        </div>
+      </div>
+      <div class="input-group">
+        <label for="cAge">Age</label>
+        <div class="input-row">
+          <input type="number" class="input-field" id="cAge"
+                 placeholder="e.g. 24" min="0" step="1"
+                 oninput="calcComplete()" inputmode="decimal" autocomplete="off">
+          <select class="input-field" id="cAgeUnit" onchange="calcComplete()">
+            <option value="months">Months</option>
+            <option value="years">Years</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-card">
+      <div class="card-label">Clinical Parameters</div>
+      <div class="input-group">
+        <label>Degree of Dehydration</label>
+        <div class="radio-group">
+          <div class="radio-pill"><input type="radio" name="dehyd" id="d0"  value="0"  checked onchange="calcComplete()"><label for="d0">None</label></div>
+          <div class="radio-pill"><input type="radio" name="dehyd" id="d5"  value="5"  onchange="calcComplete()"><label for="d5">Mild 5%</label></div>
+          <div class="radio-pill"><input type="radio" name="dehyd" id="d10" value="10" onchange="calcComplete()"><label for="d10">Moderate 10%</label></div>
+          <div class="radio-pill"><input type="radio" name="dehyd" id="d15" value="15" onchange="calcComplete()"><label for="d15">Severe 15%</label></div>
+        </div>
+      </div>
+      <div class="input-group">
+        <label>NPO Status</label>
+        <div class="radio-group">
+          <div class="radio-pill"><input type="radio" name="npo" id="npoNo"  value="no"  checked onchange="calcComplete()"><label for="npoNo">No (eating/drinking)</label></div>
+          <div class="radio-pill"><input type="radio" name="npo" id="npoYes" value="yes" onchange="calcComplete()"><label for="npoYes">Yes — NPO</label></div>
+        </div>
+      </div>
+      <div class="input-group">
+        <label for="cLosses">Ongoing Losses <span class="opt-tag">optional</span></label>
+        <div class="input-row">
+          <input type="number" class="input-field" id="cLosses"
+                 placeholder="e.g. 10" min="0" step="1"
+                 oninput="calcComplete()" inputmode="decimal" autocomplete="off">
+          <select class="input-field" style="min-width:80px" disabled aria-label="mL/hr">
+            <option>mL/hr</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="results-card">
+      <div class="empty-state" id="completeEmpty">
+        <div class="empty-icon">🧪</div>
+        <div class="empty-text">Enter weight and age to calculate<br>fluid requirements</div>
+      </div>
+      <div class="results-content" id="completeContent">
+        <span class="results-label">Fluid Calculation — First 8 Hours</span>
+        <div class="metric-grid cols-3">
+          <div class="metric-item">
+            <div><span class="metric-value sm" id="c-base">—</span><span class="metric-unit">mL/hr</span></div>
+            <div class="metric-desc">Base Rate</div>
+          </div>
+          <div class="metric-divider"></div>
+          <div class="metric-item">
+            <div><span class="metric-value sm" id="c-deficit">—</span><span class="metric-unit">mL/hr</span></div>
+            <div class="metric-desc">Deficit Rate</div>
+          </div>
+          <div class="metric-divider"></div>
+          <div class="metric-item">
+            <div><span class="metric-value sm" id="c-total">—</span><span class="metric-unit">mL/hr</span></div>
+            <div class="metric-desc">Total Rate</div>
+          </div>
+        </div>
+        <div class="section-divider"></div>
+        <div class="breakdown-title">Rate Breakdown</div>
+        <div class="breakdown-row" id="bd-base-row">
+          <span class="row-label">Base maintenance (4-2-1)</span>
+          <span class="row-val" id="bd-base">—</span>
+        </div>
+        <div class="breakdown-row" id="bd-deficit-row">
+          <span class="row-label">Deficit correction (½ over 8 hrs)</span>
+          <span class="row-val" id="bd-deficit">—</span>
+        </div>
+        <div class="breakdown-row" id="bd-npo-row">
+          <span class="row-label">NPO adjustment (1 mL/kg/hr)</span>
+          <span class="row-val" id="bd-npo">—</span>
+        </div>
+        <div class="breakdown-row" id="bd-losses-row">
+          <span class="row-label">Ongoing losses</span>
+          <span class="row-val" id="bd-losses">—</span>
+        </div>
+        <div class="breakdown-row total-row">
+          <span class="row-label">Total — First 8 hours</span>
+          <span class="row-val" id="bd-total">—</span>
+        </div>
+        <div class="section-divider"></div>
+        <div class="bag-rec">
+          <span class="bag-icon">💊</span>
+          <div>
+            <div class="bag-main" id="c-bag-main">—</div>
+            <div class="bag-sub" id="c-bag-sub">—</div>
+          </div>
+        </div>
+        <div class="action-buttons">
+          <button class="btn btn-copy" onclick="copyComplete(event)">📋 Copy Results</button>
+          <button class="btn btn-reset" onclick="resetComplete()">↺ Reset</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <strong>For clinical reference only.</strong> Always verify calculations<br>and apply clinical judgment.
+  </div>
+
+</div>
+
+<script>
+'use strict';
+
+/* ─── PWA setup ─── */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
+
+// Show "Add to Home Screen" banner only when running in browser (not installed)
+window.addEventListener('load', () => {
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+                    || window.navigator.standalone === true;
+  if (!isStandalone && /iphone|ipad|ipod|android/i.test(navigator.userAgent)) {
+    const shown = sessionStorage.getItem('installDismissed');
+    if (!shown) document.getElementById('installBanner').classList.add('show');
+  }
+  // Generate canvas icon and inject as apple-touch-icon
+  try {
+    const c = document.createElement('canvas');
+    c.width = c.height = 512;
+    const ctx = c.getContext('2d');
+    ctx.beginPath();
+    const [w, h, r] = [512, 512, 90];
+    ctx.moveTo(r, 0); ctx.lineTo(w-r, 0); ctx.quadraticCurveTo(w, 0, w, r);
+    ctx.lineTo(w, h-r); ctx.quadraticCurveTo(w, h, w-r, h);
+    ctx.lineTo(r, h); ctx.quadraticCurveTo(0, h, 0, h-r);
+    ctx.lineTo(0, r); ctx.quadraticCurveTo(0, 0, r, 0);
+    ctx.closePath();
+    ctx.fillStyle = '#1e4d9b'; ctx.fill();
+    ctx.fillStyle = 'white';
+    ctx.beginPath(); ctx.roundRect(196, 96, 120, 320, 22); ctx.fill();
+    ctx.beginPath(); ctx.roundRect(96, 196, 320, 120, 22); ctx.fill();
+    const lnk = document.createElement('link');
+    lnk.rel = 'apple-touch-icon'; lnk.href = c.toDataURL('image/png');
+    document.head.appendChild(lnk);
+  } catch(e) {}
+});
+
+function dismissInstall() {
+  sessionStorage.setItem('installDismissed', '1');
+  document.getElementById('installBanner').classList.remove('show');
+}
+
+/* ─── Calculation logic ─── */
+function holidaySegar(wt) {
+  if (!wt || wt <= 0) return 0;
+  if (wt <= 10) return wt * 4;
+  if (wt <= 20) return 40 + (wt - 10) * 2;
+  return 60 + (wt - 20);
+}
+function bagSize(rate) {
+  if (rate <= 40) return 250;
+  if (rate <= 80) return 500;
+  return 1000;
+}
+function fluidType(ageMonths, dehydPct) {
+  if (ageMonths < 3)  return 'D10W / 0.2% NaCl + KCl 20 mEq/L';
+  if (dehydPct >= 15) return 'Bolus NS first → D5W / 0.45% NaCl + KCl 20 mEq/L';
+  return 'D5W / 0.45% NaCl + KCl 20 mEq/L';
+}
+function fmt(n) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  const r = Math.round(n * 10) / 10;
+  return r % 1 === 0 ? String(r) : r.toFixed(1);
+}
+function fmtU(n) { return fmt(n) + ' mL/hr'; }
+
+function showWarning(msg, type) {
+  const b = document.getElementById('warningBanner');
+  b.className = 'warning-banner show ' + type;
+  document.getElementById('warnIcon').textContent = type === 'error' ? '🚨' : '⚠️';
+  document.getElementById('warningText').textContent = msg;
+}
+function clearWarning() {
+  document.getElementById('warningBanner').className = 'warning-banner';
+}
+function checkWeight(wt) {
+  if (wt < 1)  { showWarning('Weight < 1 kg — consult Neonatology for appropriate fluid management.', 'error'); return false; }
+  if (wt > 70)   showWarning('Weight > 70 kg — use adult dosing protocols. Maintenance typically capped at 100–130 mL/hr.', 'warn');
+  return true;
+}
+
+let activeTab = 'simple';
+function switchTab(mode) {
+  activeTab = mode;
+  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    b.classList.toggle('active', (mode === 'simple' && i === 0) || (mode === 'complete' && i === 1));
+  });
+  document.getElementById('simpleMode').style.display   = mode === 'simple'   ? '' : 'none';
+  document.getElementById('completeMode').style.display = mode === 'complete' ? '' : 'none';
+  clearWarning();
+}
+
+/* ── Simple ── */
+function calcSimple() {
+  clearWarning();
+  const wt = parseFloat(document.getElementById('simpleWeight').value);
+  const empty = document.getElementById('simpleEmpty');
+  const content = document.getElementById('simpleContent');
+  if (!wt || wt <= 0) { empty.style.display = ''; content.classList.remove('show'); return; }
+  if (!checkWeight(wt)) { empty.style.display = ''; content.classList.remove('show'); return; }
+
+  const rate  = holidaySegar(wt);
+  const rate15 = rate * 1.5;
+  const bag   = bagSize(rate);
+  const hrs   = bag / rate;
+  const hrsStr = hrs >= 2 ? Math.round(hrs) + ' hours' : Math.round(hrs * 60) + ' min';
+
+  document.getElementById('s-rate').textContent   = fmt(rate);
+  document.getElementById('s-rate15').textContent = fmt(rate15);
+  document.getElementById('s-bag').textContent    = bag;
+  document.getElementById('s-bag-main').textContent = bag + ' mL IV bag recommended';
+  document.getElementById('s-bag-sub').textContent  =
+    'Runs ~' + hrsStr + ' at maintenance rate · D5W / 0.45% NaCl + KCl 20 mEq/L';
+
+  empty.style.display = 'none';
+  content.classList.add('show');
+}
+
+function resetSimple() {
+  document.getElementById('simpleWeight').value = '';
+  clearWarning();
+  document.getElementById('simpleEmpty').style.display = '';
+  document.getElementById('simpleContent').classList.remove('show');
+}
+
+function copySimple(e) {
+  const wt     = document.getElementById('simpleWeight').value;
+  const rate   = document.getElementById('s-rate').textContent;
+  const rate15 = document.getElementById('s-rate15').textContent;
+  const bag    = document.getElementById('s-bag').textContent;
+  const bagTxt = document.getElementById('s-bag-main').textContent;
+  const text =
+    'PEDIATRIC MAINTENANCE FLUIDS — Simple Mode\n' +
+    '===========================================\n' +
+    'Weight: ' + wt + ' kg\n\n' +
+    'Maintenance Rate (4-2-1):  ' + rate   + ' mL/hr\n' +
+    '1.5× Rate:                 ' + rate15 + ' mL/hr\n' +
+    'Suggested IV Bag:          ' + bag    + ' mL\n\n' +
+    bagTxt + '\n\n' +
+    'Calculated using Holliday-Segar (4-2-1) rule.\n' +
+    'For clinical reference only — verify all calculations.';
+  doClip(text, e.currentTarget);
+}
+
+/* ── Complete ── */
+function calcComplete() {
+  clearWarning();
+  const wt       = parseFloat(document.getElementById('cWeight').value);
+  const age      = parseFloat(document.getElementById('cAge').value);
+  const ageUnit  = document.getElementById('cAgeUnit').value;
+  const dehydPct = parseFloat(document.querySelector('input[name="dehyd"]:checked').value);
+  const npo      = document.querySelector('input[name="npo"]:checked').value === 'yes';
+  const losses   = parseFloat(document.getElementById('cLosses').value) || 0;
+  const empty    = document.getElementById('completeEmpty');
+  const content  = document.getElementById('completeContent');
+
+  if (!wt || wt <= 0 || !age || age <= 0) { empty.style.display = ''; content.classList.remove('show'); return; }
+  if (!checkWeight(wt))                    { empty.style.display = ''; content.classList.remove('show'); return; }
+
+  const ageMonths   = ageUnit === 'years' ? age * 12 : age;
+  const baseRate    = holidaySegar(wt);
+  const deficitTot  = wt * (dehydPct / 100) * 1000;
+  const deficitR8   = (deficitTot / 2) / 8;
+  const deficitR16  = (deficitTot / 2) / 16;
+  const npoRate     = npo ? wt * 1 : 0;
+  const totalRate   = baseRate + deficitR8 + npoRate + losses;
+  const totalRate16 = baseRate + deficitR16 + npoRate + losses;
+
+  document.getElementById('c-base').textContent   = fmt(baseRate);
+  document.getElementById('c-deficit').textContent = fmt(deficitR8);
+  document.getElementById('c-total').textContent   = fmt(totalRate);
+
+  document.getElementById('bd-base').textContent    = fmtU(baseRate);
+  document.getElementById('bd-deficit').textContent = fmtU(deficitR8);
+  document.getElementById('bd-npo').textContent     = fmtU(npoRate);
+  document.getElementById('bd-losses').textContent  = fmtU(losses);
+  document.getElementById('bd-total').textContent   = fmtU(totalRate);
+
+  document.getElementById('bd-deficit-row').className = 'breakdown-row' + (dehydPct === 0  ? ' dimmed' : '');
+  document.getElementById('bd-npo-row').className     = 'breakdown-row' + (!npo            ? ' dimmed' : '');
+  document.getElementById('bd-losses-row').className  = 'breakdown-row' + (losses === 0    ? ' dimmed' : '');
+
+  const bag   = bagSize(totalRate);
+  const fluid = fluidType(ageMonths, dehydPct);
+  const hrs   = bag / totalRate;
+  const hrsStr = hrs >= 2 ? Math.round(hrs) + ' hrs' : Math.round(hrs * 60) + ' min';
+
+  document.getElementById('c-bag-main').textContent = bag + ' mL bag · ' + fluid;
+  let sub = '~' + hrsStr + ' at total rate';
+  if (dehydPct > 0) sub += ' · After 8 hrs reduce to ' + fmt(totalRate16) + ' mL/hr (remaining deficit over 16 hrs)';
+  if (dehydPct >= 15) sub += ' · Give 20 mL/kg NS bolus first for severe dehydration';
+  document.getElementById('c-bag-sub').textContent = sub;
+
+  empty.style.display = 'none';
+  content.classList.add('show');
+}
+
+function resetComplete() {
+  document.getElementById('cWeight').value = '';
+  document.getElementById('cAge').value    = '';
+  document.getElementById('cAgeUnit').value= 'months';
+  document.getElementById('d0').checked    = true;
+  document.getElementById('npoNo').checked = true;
+  document.getElementById('cLosses').value = '';
+  clearWarning();
+  document.getElementById('completeEmpty').style.display = '';
+  document.getElementById('completeContent').classList.remove('show');
+}
+
+function copyComplete(e) {
+  const wt      = document.getElementById('cWeight').value;
+  const age     = document.getElementById('cAge').value;
+  const ageUnit = document.getElementById('cAgeUnit').value;
+  const dehydPct= document.querySelector('input[name="dehyd"]:checked').value;
+  const npo     = document.querySelector('input[name="npo"]:checked').value;
+  const losses  = document.getElementById('cLosses').value || '0';
+  const text =
+    'PEDIATRIC MAINTENANCE FLUIDS — Complete Mode\n' +
+    '=============================================\n' +
+    'Weight: ' + wt + ' kg  |  Age: ' + age + ' ' + ageUnit + '\n' +
+    'Dehydration: ' + dehydPct + '%  |  NPO: ' + npo + '  |  Ongoing losses: ' + losses + ' mL/hr\n\n' +
+    'RATE BREAKDOWN (first 8 hours)\n' +
+    '  Base maintenance (4-2-1):      ' + document.getElementById('bd-base').textContent    + '\n' +
+    '  Deficit correction (8 hrs):    ' + document.getElementById('bd-deficit').textContent + '\n' +
+    '  NPO adjustment:                ' + document.getElementById('bd-npo').textContent     + '\n' +
+    '  Ongoing losses:                ' + document.getElementById('bd-losses').textContent  + '\n' +
+    '  ──────────────────────────────────────\n' +
+    '  TOTAL:                         ' + document.getElementById('bd-total').textContent   + '\n\n' +
+    'RECOMMENDATION\n' +
+    '  ' + document.getElementById('c-bag-main').textContent + '\n' +
+    '  ' + document.getElementById('c-bag-sub').textContent  + '\n\n' +
+    'Calculated using Holliday-Segar (4-2-1) rule.\n' +
+    'For clinical reference only — verify all calculations.';
+  doClip(text, e.currentTarget);
+}
+
+/* ─── Clipboard ─── */
+function doClip(text, btn) {
+  const orig = btn.innerHTML;
+  const ok = () => {
+    btn.innerHTML = '✓ Copied!';
+    setTimeout(() => { btn.innerHTML = orig; }, 2200);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(ok).catch(() => fallback(text, ok));
+  } else {
+    fallback(text, ok);
+  }
+  function fallback(t, cb) {
+    const ta = document.createElement('textarea');
+    ta.value = t;
+    ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+    document.body.appendChild(ta);
+    ta.focus(); ta.select();
+    try { document.execCommand('copy'); cb(); } catch(e) {}
+    document.body.removeChild(ta);
+  }
+}
+</script>
+</body>
+</html>

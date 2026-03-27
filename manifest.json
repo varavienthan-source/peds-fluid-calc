@@ -1,0 +1,19 @@
+{
+  "name": "Pediatric Fluid Calculator",
+  "short_name": "Fluid Calc",
+  "description": "Holliday-Segar pediatric maintenance fluid dosing calculator",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#0f2444",
+  "background_color": "#0f2444",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
