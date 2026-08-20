@@ -1,0 +1,19 @@
+# Source documents are NEVER committed.
+#
+# The CAPN Paediatric Nephrology Resident Handbook is copyright © 2021 Canadian
+# Association of Paediatric Nephrologists, all rights reserved, and requires
+# permission from the publisher prior to reproduction or transmission. This
+# repository is public and GitHub Pages serves its root, so anything committed
+# here becomes publicly downloadable and stays in git history permanently.
+#
+# The app cites the handbook's formulas, thresholds and constants — which are
+# facts, not copyrightable expression. The document itself stays out of git.
+*.pdf
+*.docx
+handbook*
+scratch/
+tmp/
+
+# Node
+node_modules/
+npm-debug.log*
