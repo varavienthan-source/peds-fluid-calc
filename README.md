@@ -31,7 +31,19 @@ Notably, bedside Schwartz is stated by the handbook directly in SI as
 `eGFR = 36.5 × height(cm) / Cr(µmol/L)`, and the nephrotic proteinuria threshold is
 **250 mg/mmol** — roughly 2200 mg/g, a factor-of-nine trap if the units are confused.
 
-## Running
+## Live site
+
+**https://varavienthan-source.github.io/peds-fluid-calc/**
+
+Served by GitHub Pages from `main` at the repository root. Because it is a real origin,
+the service worker registers — so the app installs to a phone home screen and keeps
+working with no network. On iOS: open in Safari, then Share → Add to Home Screen.
+
+To enable or re-enable Pages: repository **Settings → Pages → Source: Deploy from a
+branch → Branch: `main` / `(root)` → Save**. The first build takes a minute or two.
+Note that Pages sites are public even when the repository is private.
+
+## Running locally
 
 No build step and no dependencies. Serve the directory over HTTP — a real server is
 required, because the service worker and manifest do not register on `file://`.
