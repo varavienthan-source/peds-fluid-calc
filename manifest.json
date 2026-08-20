@@ -1,7 +1,7 @@
 {
-  "name": "Pediatric Fluid Calculator",
-  "short_name": "Fluid Calc",
-  "description": "Holliday-Segar pediatric maintenance fluid dosing calculator",
+  "name": "Paediatric Nephrology Calculator",
+  "short_name": "Peds Neph",
+  "description": "Paediatric nephrology calculations in Canadian SI units, with full working shown.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
